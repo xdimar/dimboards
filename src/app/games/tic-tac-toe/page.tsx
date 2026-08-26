@@ -8,37 +8,46 @@ import { supabase } from "@/lib/supabaseClient";
 type Square = "X" | "O" | null;
 
 export default function TicTacToePage() {
-  // State untuk UI (Lobby vs Game)
   const [gameState, setGameState] = useState<"lobby" | "playing">("lobby");
   
-  // State data game dari Supabase
   const [roomCode, setRoomCode] = useState<string>("");
   const [inputCode, setInputCode] = useState<string>("");
   const [playerSymbol, setPlayerSymbol] = useState<"X" | "O">("X");
   
-  // State papan game lokal
   const [board, setBoard] = useState<Square[]>(Array(9).fill(null) as Square[]);
   const [isXNext, setIsXNext] = useState<boolean>(true);
+  
+  // State untuk fitur polish
   const [winner, setWinner] = useState<Square>(null);
+  const [winningLine, setWinningLine] = useState<number[] | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
 
-  // Fungsi generate kode room acak
   const generateRoomCode = () => {
     return Math.random().toString(36).substring(2, 7).toUpperCase();
   };
 
-  // --- FUNGSI CREATE ROOM (Player X) ---
+  // Fungsi pengecek pemenang sekaligus dapat index kotaknya
+  const calculateWinner = (squares: Square[]): { winner: Square; line: number[] | null } => {
+    const lines = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],
+      [0, 4, 8], [2, 4, 6],
+    ];
+    for (let i = 0; i < lines.length; i++) {
+      const [a, b, c] = lines[i];
+      if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+        return { winner: squares[a], line: lines[i] };
+      }
+    }
+    return { winner: null, line: null };
+  };
+
   const handleCreateRoom = async () => {
     const newCode = generateRoomCode();
     const emptyBoard = Array(9).fill(null) as Square[];
 
-    // Masukkan data ke table Supabase
     const { error } = await supabase.from("tictactoe_rooms").insert([
-      {
-        room_code: newCode,
-        board: emptyBoard,
-        is_x_next: true,
-        winner: null,
-      },
+      { room_code: newCode, board: emptyBoard, is_x_next: true, winner: null },
     ]);
 
     if (error) {
@@ -49,19 +58,15 @@ export default function TicTacToePage() {
     setRoomCode(newCode);
     setPlayerSymbol("X");
     setGameState("playing");
-
-    // Listen perubahan data di room ini
     subscribeToRoom(newCode);
   };
 
-  // --- FUNGSI JOIN ROOM (Player O) ---
   const handleJoinRoom = async () => {
     if (inputCode.length < 4) {
       alert("Kode room minimal 4 karakter");
       return;
     }
 
-    // Cari room di Supabase
     const { data, error } = await supabase
       .from("tictactoe_rooms")
       .select("*")
@@ -74,77 +79,79 @@ export default function TicTacToePage() {
     }
 
     setRoomCode(data.room_code);
-    setPlayerSymbol("O"); // Yang join pasti pemain O
+    setPlayerSymbol("O");
     setBoard(data.board as Square[]);
     setIsXNext(data.is_x_next);
     setWinner(data.winner as Square);
-    setGameState("playing");
+    
+    // Cek jika room yang dimasuki sudah ada pemenangnya
+    const result = calculateWinner(data.board as Square[]);
+    setWinningLine(result.line);
 
-    // Listen perubahan data di room ini
+    setGameState("playing");
     subscribeToRoom(inputCode.toUpperCase());
   };
 
-  // --- FUNGSI REAL-TIME LISTENER ---
   const subscribeToRoom = (code: string) => {
-    // Setiap ada perubahan di database, update state lokal
     supabase
       .channel(`room:${code}`)
       .on(
         "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "tictactoe_rooms",
-          filter: `room_code=eq.${code}`,
-        },
+        { event: "UPDATE", schema: "public", table: "tictactoe_rooms", filter: `room_code=eq.${code}` },
         (payload) => {
           const newData = payload.new as any;
           setBoard(newData.board);
           setIsXNext(newData.is_x_next);
           setWinner(newData.winner);
+          
+          // Update garis menang saat ada perubahan dari musuh
+          const result = calculateWinner(newData.board);
+          setWinningLine(result.line);
         }
       )
       .subscribe();
   };
 
-  // --- FUNGSI KLIK KOTAK ---
   const handleClick = async (index: number) => {
-    // Cek: Apakah giliran saya? Apakah kotak kosong? Apakah belum ada menang?
     if (board[index] || winner) return;
-    if (isXNext !== (playerSymbol === "X")) return; // Kalau bukan giliran saya, abaikan
+    if (isXNext !== (playerSymbol === "X")) return;
 
     const newBoard = [...board];
     newBoard[index] = playerSymbol;
     
-    // Cek pemenang lokal
-    const lines = [
-      [0, 1, 2], [3, 4, 5], [6, 7, 8],
-      [0, 3, 6], [1, 4, 7], [2, 5, 8],
-      [0, 4, 8], [2, 4, 6],
-    ];
-    let newWinner: Square = null;
-    for (let i = 0; i < lines.length; i++) {
-      const [a, b, c] = lines[i];
-      if (newBoard[a] && newBoard[a] === newBoard[b] && newBoard[a] === newBoard[c]) {
-        newWinner = newBoard[a];
-        break;
-      }
-    }
+    const result = calculateWinner(newBoard);
+    const newWinner = result.winner;
 
-    // Update state lokal biar UI langsung respon (gak nunggu server)
     setBoard(newBoard);
     setIsXNext(!isXNext);
     setWinner(newWinner);
+    setWinningLine(result.line);
 
-    // Kirim update ke Supabase
     await supabase
       .from("tictactoe_rooms")
-      .update({
-        board: newBoard,
-        is_x_next: !isXNext,
-        winner: newWinner,
-      })
+      .update({ board: newBoard, is_x_next: !isXNext, winner: newWinner })
       .eq("room_code", roomCode);
+  };
+
+  // Fungsi Play Again (Reset papan di Supabase)
+  const handlePlayAgain = async () => {
+    const emptyBoard = Array(9).fill(null) as Square[];
+    setBoard(emptyBoard);
+    setIsXNext(true);
+    setWinner(null);
+    setWinningLine(null);
+
+    await supabase
+      .from("tictactoe_rooms")
+      .update({ board: emptyBoard, is_x_next: true, winner: null })
+      .eq("room_code", roomCode);
+  };
+
+  // Fungsi Copy Kode
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(roomCode);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000); // Reset teks setelah 2 detik
   };
 
   // --- UI LOBBY ---
@@ -179,34 +186,50 @@ export default function TicTacToePage() {
   }
 
   // --- UI GAME ---
+  const isDraw = !winner && board.every((s) => s !== null);
   const status = winner
     ? `Pemenang: ${winner} 🎉`
-    : board.every((s) => s !== null)
+    : isDraw
     ? "Permainan Seri! 🤝"
     : `Giliran: ${isXNext ? "X" : "O"} ${isXNext === (playerSymbol === "X") ? "(Kamu)" : "(Musuh)"}`;
 
   return (
     <main className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-4">
       <h1 className="text-3xl font-bold mb-2">Tic-Tac-Toe Online</h1>
-      <p className="text-gray-400 mb-1">Kode Room: <span className="font-mono font-bold text-white tracking-widest">{roomCode}</span></p>
+      
+      {/* Bagian Kode Room + Copy */}
+      <div className="flex items-center gap-2 mb-1 bg-gray-800 px-4 py-2 rounded-full border border-gray-700">
+        <p className="text-gray-400 text-sm">Kode Room:</p>
+        <span className="font-mono font-bold text-white tracking-widest">{roomCode}</span>
+        <button onClick={handleCopyCode} className="text-blue-400 hover:text-blue-300 transition-colors ml-2 text-sm font-medium">
+          {isCopied ? "Tersalin!" : "Copy"}
+        </button>
+      </div>
+      
       <p className="text-sm mb-4">Kamu: <span className={playerSymbol === 'X' ? 'text-blue-400 font-bold' : 'text-red-400 font-bold'}>{playerSymbol}</span></p>
       
       <div className={`text-xl font-semibold mb-6 ${winner ? 'text-green-400' : 'text-blue-400'}`}>
         {status}
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mb-8 bg-gray-800 p-2 rounded-xl">
+      {/* Papan Game dengan Highlight */}
+      <div className="grid grid-cols-3 gap-2 mb-6 bg-gray-800 p-2 rounded-xl">
         {board.map((square, index) => {
-          // Tentukan apakah tombol ini boleh diklik
           const isMyTurn = isXNext === (playerSymbol === "X");
           const canClick = !square && !winner && isMyTurn;
+          // Cek apakah kotak ini bagian dari garis menang
+          const isWinningSquare = winningLine?.includes(index);
           
           return (
             <button
               key={index}
               onClick={() => handleClick(index)}
-              className={`w-24 h-24 bg-gray-900 border border-gray-700 rounded-lg flex items-center justify-center text-4xl font-bold transition-colors ${
-                canClick ? "hover:bg-gray-700 cursor-pointer" : "cursor-not-allowed opacity-80"
+              className={`w-24 h-24 bg-gray-900 border rounded-lg flex items-center justify-center text-4xl font-bold transition-all duration-200 ${
+                isWinningSquare 
+                  ? "bg-green-500/20 border-green-500 scale-105" /* Efek menang */
+                  : canClick 
+                  ? "border-gray-700 hover:bg-gray-700 cursor-pointer hover:scale-105" 
+                  : "border-gray-700 cursor-not-allowed opacity-80"
               }`}
             >
               <span className={square === 'X' ? 'text-blue-400' : 'text-red-400'}>
@@ -217,9 +240,23 @@ export default function TicTacToePage() {
         })}
       </div>
 
-      <Link href="/" className="px-6 py-3 bg-gray-800 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors border border-gray-700">
-        Keluar dari Room
-      </Link>
+      {/* Tombol Aksi: Main Lagi / Keluar */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {(winner || isDraw) && (
+          <button
+            onClick={handlePlayAgain}
+            className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors"
+          >
+            🔄 Main Lagi
+          </button>
+        )}
+        <Link
+          href="/"
+          className="px-6 py-3 bg-gray-800 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors border border-gray-700 text-center"
+        >
+          Keluar dari Room
+        </Link>
+      </div>
     </main>
   );
 }
