@@ -17,7 +17,7 @@ export default function ChessLobbyPage() {
   const [showMultiplayer, setShowMultiplayer] = useState(false);
   const [roomCodeInput, setRoomCodeInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // State untuk durasi waktu (default 10 menit = 600 detik)
   const [selectedTime, setSelectedTime] = useState(600);
 
@@ -29,12 +29,12 @@ export default function ChessLobbyPage() {
 
   const createRoom = async () => {
     setIsLoading(true);
-    const newRoomId = Math.random().toString(36).substring(2, 8).toUpperCase(); 
-    
+    const newRoomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+
     // Insert room ke Supabase dengan status waiting dan waktu yang dipilih
     const { error } = await supabase.from('chess_rooms').insert([
-      { 
-        id: newRoomId, 
+      {
+        id: newRoomId,
         status: 'waiting',
         white_time: selectedTime,
         black_time: selectedTime
@@ -55,13 +55,13 @@ export default function ChessLobbyPage() {
     setIsLoading(true);
 
     const { data, error } = await supabase.from('chess_rooms').select('id, status').eq('id', roomCodeInput.toUpperCase()).single();
-    
+
     setIsLoading(false);
     if (error || !data) {
       alert("Room tidak ditemukan!");
       return;
     }
-    
+
     router.push(`/games/chess/play?mode=multiplayer&roomId=${roomCodeInput.toUpperCase()}&color=b`);
   };
 
@@ -96,7 +96,7 @@ export default function ChessLobbyPage() {
 
           {/* Menu Multiplayer */}
           <div className="w-full">
-            <button 
+            <button
               onClick={() => setShowMultiplayer(!showMultiplayer)}
               className={`flex items-center justify-center gap-3 w-full p-4 rounded-xl transition-all font-semibold border ${showMultiplayer ? 'bg-green-600 border-green-500' : 'bg-green-600/20 border-green-500/50 hover:bg-green-600/40 text-green-100'}`}
             >
@@ -105,9 +105,9 @@ export default function ChessLobbyPage() {
 
             {showMultiplayer && (
               <div className="mt-3 bg-gray-950 border border-gray-800 rounded-xl p-4 flex flex-col gap-3 animate-fade-in text-left">
-                
+
                 <label className="text-xs text-gray-500 font-bold ml-1">Pilih Waktu (Buat Room):</label>
-                <select 
+                <select
                   value={selectedTime}
                   onChange={(e) => setSelectedTime(Number(e.target.value))}
                   className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-green-500 mb-2"
@@ -120,7 +120,7 @@ export default function ChessLobbyPage() {
                 <button onClick={createRoom} disabled={isLoading} className="w-full py-2 bg-green-600 hover:bg-green-500 rounded-lg font-bold text-white transition-colors disabled:opacity-50">
                   {isLoading ? "Membuat..." : "+ Buat Room Baru"}
                 </button>
-                
+
                 <div className="flex items-center gap-2 text-gray-500 text-sm my-1">
                   <span className="h-px w-full bg-gray-800"></span>ATAU<span className="h-px w-full bg-gray-800"></span>
                 </div>
@@ -136,7 +136,7 @@ export default function ChessLobbyPage() {
 
           {/* Menu Bot */}
           <div className="w-full">
-            <button 
+            <button
               onClick={() => setShowBotLevels(!showBotLevels)}
               className={`flex items-center justify-center gap-3 w-full p-4 rounded-xl transition-all font-semibold border ${showBotLevels ? 'bg-indigo-600 border-indigo-500' : 'bg-indigo-600/20 border-indigo-500/50 hover:bg-indigo-600/40 text-indigo-100'}`}
             >
@@ -155,7 +155,14 @@ export default function ChessLobbyPage() {
             )}
           </div>
         </div>
-        
+
+        <button
+          onClick={() => router.push("/games/chess/analysis")}
+          className="flex items-center justify-center gap-3 w-full bg-amber-600/20 hover:bg-amber-600/40 border border-amber-500/50 p-4 rounded-xl transition-all font-semibold text-amber-100"
+        >
+          <span className="text-xl">🔍</span> Analisis Papan (Offline)
+        </button>
+
         <Link href="/" className="mt-8 inline-block text-sm text-gray-500 hover:text-gray-300 transition-colors">
           ← Kembali ke Beranda
         </Link>
