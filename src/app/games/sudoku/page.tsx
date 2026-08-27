@@ -5,6 +5,8 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import { generateSudoku, Difficulty } from "@/lib/sudoku";
 import { supabase } from "@/lib/supabaseClient";
+import AdsterraBanner from "@/components/AdsterraBanner";
+import AdsterraCustomBanner from "@/components/AdsterraBanner";
 
 interface CellState {
   value: number;
@@ -418,6 +420,7 @@ export default function SudokuPage() {
           </div>
         </div>
       )}
+      <AdsterraCustomBanner/>
     </main>
   );
 }
