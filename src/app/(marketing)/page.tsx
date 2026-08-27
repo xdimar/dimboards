@@ -1,5 +1,9 @@
-// src/app/page.tsx
+// src/app/(marketing)/page.tsx
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabaseClient";
 
 const games = [
   { 
@@ -22,28 +26,63 @@ const games = [
     name: "Sudoku", 
     slug: "sudoku", 
     desc: "Teka-teki angka 9x9. Isi kotak-kotak kosong dengan benar.", 
-    status: "Segera",
+    status: "Tersedia",
     emoji: "🔢",
     color: "from-green-500 to-emerald-600"
   },
 ];
 
 export default function Home() {
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    // Cek status sesi login pengguna saat ini
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+    };
+
+    checkUser();
+
+    // Dengarkan perubahan login/logout secara real-time
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   return (
     <main className="min-h-screen bg-slate-950 text-white overflow-hidden">
       
-      {/* Navbar: Padding dikecilin di mobile (p-4) */}
+      {/* Navbar: Tombol dinamis (Masuk / Profil) */}
       <nav className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-4 sm:p-6 md:px-12">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-linear-to-br from-blue-400 to-indigo-600 rounded-md rotate-45"></div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Dim<span className="text-blue-400">Boards</span></h1>
         </div>
-        <button className="px-4 py-2 text-xs sm:text-sm bg-white/10 backdrop-blur-sm rounded-full border border-white/20 hover:bg-white/20 transition-colors">
-          Masuk
-        </button>
+
+        {user ? (
+          <Link
+            href="/profile"
+            className="flex items-center gap-2 px-4 py-2 text-xs sm:text-sm bg-blue-600/20 text-blue-300 border border-blue-500/40 rounded-full hover:bg-blue-600/30 transition-colors"
+          >
+            <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+            Profil Saya
+          </Link>
+        ) : (
+          <Link
+            href="/auth"
+            className="px-4 py-2 text-xs sm:text-sm bg-white/10 backdrop-blur-sm rounded-full border border-white/20 hover:bg-white/20 transition-colors"
+          >
+            Masuk
+          </Link>
+        )}
       </nav>
 
-      {/* Hero Section: Ngurangin padding atas di mobile biar gak kelamaan scroll */}
+      {/* Hero Section */}
       <section className="relative flex flex-col items-center justify-center text-center pt-32 pb-20 px-4 sm:px-6 md:pt-48 md:pb-24">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-75 h-75 md:w-150 md:h-100 bg-blue-600/20 blur-[120px] rounded-full pointer-events-none"></div>
         
@@ -53,7 +92,6 @@ export default function Home() {
             Multiplayer Online Tersedia!
           </div>
           
-          {/* Ukuran font dikecilin di mobile (text-4xl), membesar di layar lebih besar */}
           <h2 className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-linear-to-b from-white to-slate-400 bg-clip-text text-transparent">
             Bermain Papan, <br/> Tanpa Batas.
           </h2>
@@ -62,20 +100,19 @@ export default function Home() {
             DimBoards adalah rumah untuk game papan klasik. Mainkan catur, sudoku, dan game favoritmu secara real-time bersama teman, langsung di browser.
           </p>
           
-          {/* Tombol jadi full width di mobile (w-full), dan flex row di tablet ke atas */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center w-full sm:w-auto">
-            <Link href="/games/tic-tac-toe" className="px-8 py-4 bg-white text-black font-semibold rounded-full hover:bg-slate-200 transition-all hover:scale-105 shadow-lg shadow-blue-500/20 text-center">
+            <Link href="/games/chess" className="px-8 py-4 bg-white text-black font-semibold rounded-full hover:bg-slate-200 transition-all hover:scale-105 shadow-lg shadow-blue-500/20 text-center">
               Mulai Bermain
             </Link>
-            <button className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-full border border-white/20 hover:bg-white/20 transition-all text-center">
-              Pelajari Lebih Lanjut
-            </button>
+            <a href="#games" className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white font-semibold rounded-full border border-white/20 hover:bg-white/20 transition-all text-center">
+              Lihat Koleksi Game
+            </a>
           </div>
         </div>
       </section>
 
-      {/* Koleksi Game: Padding disesuaikan */}
-      <section className="px-4 sm:px-6 md:px-12 pb-20 md:pb-24 max-w-6xl mx-auto">
+      {/* Koleksi Game */}
+      <section id="games" className="px-4 sm:px-6 md:px-12 pb-20 md:pb-24 max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-6 sm:mb-8 gap-2">
           <h3 className="text-2xl sm:text-3xl font-bold tracking-tight">Koleksi Game</h3>
           <span className="text-slate-500 text-xs sm:text-sm">{games.filter(g => g.status === 'Tersedia').length} dari {games.length} game tersedia</span>

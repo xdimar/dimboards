@@ -22,9 +22,9 @@ const loadGameData = (dataStr: string) => {
   const newGame = new Chess();
   if (!dataStr) return newGame;
   if (dataStr.includes("1.") || dataStr.includes("[Event")) {
-    newGame.loadPgn(dataStr); 
+    newGame.loadPgn(dataStr);
   } else {
-    newGame.load(dataStr); 
+    newGame.load(dataStr);
   }
   return newGame;
 };
@@ -34,7 +34,7 @@ function ChessBoardArea() {
   const mode = searchParams.get("mode") || "local";
   const level = searchParams.get("level") || "medium";
   const roomId = searchParams.get("roomId");
-  const myColor = searchParams.get("color") || "w"; 
+  const myColor = searchParams.get("color") || "w";
 
   const isVsBot = mode === "bot";
   const isMultiplayer = mode === "multiplayer";
@@ -67,14 +67,14 @@ function ChessBoardArea() {
   useEffect(() => {
     latestFenRef.current = game.fen();
     latestPgnRef.current = game.pgn();
-    
+
     const currentHistory = game.history({ verbose: true });
     if (currentHistory.length > 0) {
       const lastMove = currentHistory[currentHistory.length - 1];
       const isCapture = lastMove.flags.includes('c') || lastMove.flags.includes('e');
-      
-      if (isCapture) captureSoundRef.current?.play().catch(() => {});
-      else moveSoundRef.current?.play().catch(() => {});
+
+      if (isCapture) captureSoundRef.current?.play().catch(() => { });
+      else moveSoundRef.current?.play().catch(() => { });
     }
   }, [game]);
 
@@ -98,7 +98,7 @@ function ChessBoardArea() {
     const isGameStarted = game.fen() !== INITIAL_FEN && roomStatus === "playing";
     if (!isGameStarted || game.isGameOver() || timeOutWinner) return;
 
-    const currentTurn = game.turn(); 
+    const currentTurn = game.turn();
 
     const timerInterval = setInterval(() => {
       if (currentTurn === "w") {
@@ -114,7 +114,7 @@ function ChessBoardArea() {
       }
     }, 1000);
     return () => clearInterval(timerInterval);
-  }, [game.fen(), timeOutWinner, roomStatus]); 
+  }, [game.fen(), timeOutWinner, roomStatus]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && isVsBot) {
@@ -144,21 +144,22 @@ function ChessBoardArea() {
     fetchRoom();
 
     const channel = supabase.channel(`room-${roomId}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chess_rooms', filter: `id=eq.${roomId}` }, 
-      (payload) => {
-        const { fen, white_time, black_time, status } = payload.new;
-        if (fen) {
-           const syncedGame = loadGameData(fen);
-           if (syncedGame.pgn() !== latestPgnRef.current) setGame(syncedGame);
-        }
-        if (white_time !== null) setWhiteTime(white_time);
-        if (black_time !== null) setBlackTime(black_time);
-        if (status) setRoomStatus(status);
-      }).subscribe();
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chess_rooms', filter: `id=eq.${roomId}` },
+        (payload) => {
+          const { fen, white_time, black_time, status } = payload.new;
+          if (fen) {
+            const syncedGame = loadGameData(fen);
+            if (syncedGame.pgn() !== latestPgnRef.current) setGame(syncedGame);
+          }
+          if (white_time !== null) setWhiteTime(white_time);
+          if (black_time !== null) setBlackTime(black_time);
+          if (status) setRoomStatus(status);
+        }).subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [roomId, isMultiplayer, myColor]);
 
+  // Logika Eksekusi Bot dengan Jeda Berpikir (Artificial Delay)
   useEffect(() => {
     if (isVsBot && game.turn() === "b" && !game.isGameOver() && !timeOutWinner) {
       const engine = engineRef.current;
@@ -170,25 +171,32 @@ function ChessBoardArea() {
       engine.onmessage = (event) => {
         const message = event.data;
         if (typeof message === "string" && message.startsWith("bestmove")) {
-          const bestMove = message.split(" ")[1]; 
+          const bestMove = message.split(" ")[1];
           if (bestMove && bestMove !== "(none)") {
             const from = bestMove.substring(0, 2);
             const to = bestMove.substring(2, 4);
             const promotion = bestMove.length === 5 ? bestMove[4] : "q";
 
-            const gameCopy = new Chess();
-            gameCopy.loadPgn(latestPgnRef.current);
-            try {
-              gameCopy.move({ from, to, promotion });
-              setGame(gameCopy);
-              setSelectedSquare(null);
-              setLegalMoves([]);
-            } catch (error) { console.error("Langkah bot tidak valid:", error); }
+            // Tambahkan jeda berpikir acak antara 800ms - 1500ms
+            const thinkingTime = Math.floor(Math.random() * 700) + 800;
+
+            setTimeout(() => {
+              const gameCopy = new Chess();
+              gameCopy.loadPgn(latestPgnRef.current);
+              try {
+                gameCopy.move({ from, to, promotion });
+                setGame(gameCopy);
+                setSelectedSquare(null);
+                setLegalMoves([]);
+              } catch (error) {
+                console.error("Langkah bot tidak valid:", error);
+              }
+            }, thinkingTime);
           }
         }
       };
     }
-  }, [game.fen(), isVsBot, level, timeOutWinner]); 
+  }, [game.fen(), isVsBot, level, timeOutWinner]);
 
   const handleSquareClick = async (square: string) => {
     if (game.isGameOver() || timeOutWinner || roomStatus === "waiting") return;
@@ -199,15 +207,15 @@ function ChessBoardArea() {
       try {
         const gameCopy = new Chess();
         gameCopy.loadPgn(latestPgnRef.current);
-        
+
         gameCopy.move({ from: selectedSquare, to: square, promotion: "q" });
         setGame(gameCopy);
         setSelectedSquare(null);
         setLegalMoves([]);
 
         if (isMultiplayer && roomId) {
-          supabase.from('chess_rooms').update({ 
-            fen: gameCopy.pgn(), 
+          supabase.from('chess_rooms').update({
+            fen: gameCopy.pgn(),
             white_time: whiteTime,
             black_time: blackTime
           }).eq('id', roomId).then(({ error }) => {
@@ -249,14 +257,14 @@ function ChessBoardArea() {
       w: { p: 0, n: 0, b: 0, r: 0, q: 0 },
       b: { p: 0, n: 0, b: 0, r: 0, q: 0 }
     };
-    
+
     const values: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
     let wScore = 0; let bScore = 0;
 
     board.forEach(row => row.forEach(piece => {
       if (piece) {
         if (piece.type !== 'k') {
-           counts[piece.color][piece.type as PieceType]++;
+          counts[piece.color][piece.type as PieceType]++;
         }
         if (piece.color === 'w') wScore += values[piece.type];
         if (piece.color === 'b') bScore += values[piece.type];
@@ -264,20 +272,20 @@ function ChessBoardArea() {
     }));
 
     const maxPieces: Record<PieceType, number> = { p: 8, n: 2, b: 2, r: 2, q: 1 };
-    const capturedByWhite: string[] = []; 
-    const capturedByBlack: string[] = []; 
+    const capturedByWhite: string[] = [];
+    const capturedByBlack: string[] = [];
 
     (Object.keys(maxPieces) as PieceType[]).forEach(type => {
       const bLost = maxPieces[type] - counts.b[type];
-      for(let i=0; i<bLost; i++) capturedByWhite.push("b" + type.toUpperCase());
+      for (let i = 0; i < bLost; i++) capturedByWhite.push("b" + type.toUpperCase());
 
       const wLost = maxPieces[type] - counts.w[type];
-      for(let i=0; i<wLost; i++) capturedByBlack.push("w" + type.toUpperCase());
+      for (let i = 0; i < wLost; i++) capturedByBlack.push("w" + type.toUpperCase());
     });
 
-    return { 
-      capturedByWhite, 
-      capturedByBlack, 
+    return {
+      capturedByWhite,
+      capturedByBlack,
       whiteAdvantage: wScore > bScore ? wScore - bScore : 0,
       blackAdvantage: bScore > wScore ? bScore - wScore : 0
     };
@@ -291,7 +299,7 @@ function ChessBoardArea() {
         <span className="text-6xl mb-6 block animate-bounce">⏳</span>
         <h2 className="text-2xl font-bold mb-2">Menunggu Lawan...</h2>
         <p className="text-gray-400 mb-8">Pemain Hitam belum bergabung ke dalam room.</p>
-        
+
         <div className="bg-gray-950 p-4 rounded-xl border border-gray-800 mb-6 w-full">
           <p className="text-xs text-gray-500 mb-1">Kode Room</p>
           <span className="text-4xl font-mono tracking-widest text-white font-bold">{roomId}</span>
@@ -325,7 +333,7 @@ function ChessBoardArea() {
     if (isMultiplayer) return alert("Undo tidak diizinkan di mode multiplayer.");
     const gameCopy = new Chess();
     gameCopy.loadPgn(latestPgnRef.current);
-    gameCopy.undo(); 
+    gameCopy.undo();
     if (isVsBot && gameCopy.turn() === "w") gameCopy.undo();
     setGame(gameCopy); setSelectedSquare(null); setLegalMoves([]);
   };
@@ -337,10 +345,10 @@ function ChessBoardArea() {
   const ranks = isFlipped ? [1, 2, 3, 4, 5, 6, 7, 8] : [8, 7, 6, 5, 4, 3, 2, 1];
 
   const historyVerbose = game.history({ verbose: true });
-  const allMoves = game.history(); 
+  const allMoves = game.history();
   const whiteMovesStr = allMoves.filter((_, i) => i % 2 === 0);
   const blackMovesStr = allMoves.filter((_, i) => i % 2 !== 0);
-  
+
   const lastMove = historyVerbose.length > 0 ? historyVerbose[historyVerbose.length - 1] : null;
 
   const getGameLabel = () => {
@@ -349,12 +357,12 @@ function ChessBoardArea() {
     return "Lokal (Lawan Teman)";
   };
 
-  const topPlayer = isFlipped 
-    ? { name: "Putih", time: whiteTime, active: game.turn() === 'w', moves: whiteMovesStr, captured: capturedByWhite, adv: whiteAdvantage } 
+  const topPlayer = isFlipped
+    ? { name: "Putih", time: whiteTime, active: game.turn() === 'w', moves: whiteMovesStr, captured: capturedByWhite, adv: whiteAdvantage }
     : { name: "Hitam", time: blackTime, active: game.turn() === 'b', moves: blackMovesStr, captured: capturedByBlack, adv: blackAdvantage };
-    
-  const bottomPlayer = isFlipped 
-    ? { name: "Hitam", time: blackTime, active: game.turn() === 'b', moves: blackMovesStr, captured: capturedByBlack, adv: blackAdvantage } 
+
+  const bottomPlayer = isFlipped
+    ? { name: "Hitam", time: blackTime, active: game.turn() === 'b', moves: blackMovesStr, captured: capturedByBlack, adv: blackAdvantage }
     : { name: "Putih", time: whiteTime, active: game.turn() === 'w', moves: whiteMovesStr, captured: capturedByWhite, adv: whiteAdvantage };
 
   return (
@@ -383,7 +391,7 @@ function ChessBoardArea() {
             </div>
           )}
         </div>
-        
+
         <div className={`text-xl font-semibold mb-2 ${isCheckmate || isDraw || timeOutWinner ? "text-green-400" : "text-blue-400"}`}>
           {status}
         </div>
@@ -425,7 +433,7 @@ function ChessBoardArea() {
                   const actualRow = isFlipped ? 7 - rowIndex : rowIndex;
                   const actualCol = isFlipped ? 7 - colIndex : colIndex;
                   const square = `${files[colIndex]}${ranks[rowIndex]}`;
-                  
+
                   const isLight = (actualRow + actualCol) % 2 === 0;
                   const isSelected = selectedSquare === square;
                   const isLegal = legalMoves.includes(square);
@@ -447,13 +455,13 @@ function ChessBoardArea() {
                       {colIndex === 0 && <span className={`absolute top-0 left-0.5 text-[10px] font-bold ${isLight && !isLastMove ? "text-slate-700" : "text-white mix-blend-difference"}`}>{ranks[rowIndex]}</span>}
                       {isLegal && !piece && <div className="w-1/3 h-1/3 bg-black/30 rounded-full"></div>}
                       {isLegal && piece && <div className="absolute inset-[5%] border-4 border-black/40 rounded-full"></div>}
-                      
+
                       {piece && (
-                        <span 
+                        <span
                           className={`text-3xl sm:text-4xl md:text-5xl leading-none select-none relative z-10 
                             ${piece.color === "w" ? "text-white" : "text-gray-900"}
                             ${isJustLanded ? "animate-drop" : ""}
-                          `} 
+                          `}
                           style={{ textShadow: piece.color === "w" ? "0 0 2px black" : "none" }}
                         >
                           {PIECES_UNICODE[piece.color + piece.type.toUpperCase()]}
