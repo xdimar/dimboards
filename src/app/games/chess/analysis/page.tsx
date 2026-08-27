@@ -432,7 +432,7 @@ export default function ChessAnalysisPage() {
         <h1 className="text-3xl font-bold mb-1">Chess Analysis Board</h1>
         
         {/* STOCKFISH DEPTH & EVAL HEADER */}
-        <div className="w-[85vw] max-w-[500px] flex items-center justify-between bg-gray-900 border border-gray-800 px-4 py-2 rounded-xl mb-3 shadow-md text-xs font-mono">
+        <div className="w-[85vw] max-w-125 flex items-center justify-between bg-gray-900 border border-gray-800 px-4 py-2 rounded-xl mb-3 shadow-md text-xs font-mono">
           <span className="text-amber-400 font-bold flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span> Stockfish
           </span>
@@ -446,20 +446,20 @@ export default function ChessAnalysisPage() {
 
         {/* MOVE CLASSIFICATION BADGE BANNER */}
         {lastRecord && (
-          <div className="w-[85vw] max-w-[500px] flex items-center justify-between bg-gray-900/80 border border-gray-800 px-4 py-1.5 rounded-lg mb-2 shadow-sm text-xs">
+          <div className="w-[85vw] max-w-125 flex items-center justify-between bg-gray-900/80 border border-gray-800 px-4 py-1.5 rounded-lg mb-2 shadow-sm text-xs">
             <span className="text-gray-400">Langkah: <strong className="text-white font-mono">{lastRecord.san}</strong></span>
             {renderBadgeIcon(lastRecord.badge)}
           </div>
         )}
 
         {/* UI TOP PLAYER */}
-        <div className="flex flex-col w-[85vw] max-w-[500px] mb-2 px-1">
+        <div className="flex flex-col w-[85vw] max-w-125 mb-2 px-1">
           <div className="flex justify-between w-full items-start">
             <div className="flex flex-col">
               <span className={`font-bold text-lg leading-none ${topPlayer.active ? "text-amber-400 font-extrabold" : "text-gray-400"}`}>
                 {topPlayer.name} {topPlayer.active && "•"}
               </span>
-              <div className="flex items-center text-lg mt-1.5 min-h-[1.5rem]">
+              <div className="flex items-center text-lg mt-1.5 min-h-6">
                 {topPlayer.captured.map((c, i) => (
                   <span key={i} className="text-gray-400 -ml-1 drop-shadow-md">{PIECES_UNICODE[c]}</span>
                 ))}
@@ -510,7 +510,7 @@ export default function ChessAnalysisPage() {
                 );
               })()}
 
-              <div className="grid grid-cols-8 grid-rows-8 w-[80vw] sm:w-[85vw] max-w-[500px] aspect-square rounded-lg overflow-hidden shadow-2xl border-2 border-gray-800 relative">
+              <div className="grid grid-cols-8 grid-rows-8 w-[80vw] sm:w-[85vw] max-w-125 aspect-square rounded-lg overflow-hidden shadow-2xl border-2 border-gray-800 relative">
                 {displayRows.map((row, rowIndex) =>
                   displayCols.map((colIndex) => {
                     const actualRow = isFlipped ? 7 - rowIndex : rowIndex;
@@ -530,8 +530,8 @@ export default function ChessAnalysisPage() {
                         key={square} onClick={() => handleSquareClick(square)}
                         className={`flex items-center justify-center cursor-pointer relative w-full h-full overflow-hidden transition-colors
                           ${isLight ? "bg-slate-300" : "bg-slate-700"}
-                          ${isLastMove ? (isLight ? "!bg-yellow-200" : "!bg-yellow-600/80") : ""}
-                          ${isSelected ? "!bg-blue-400" : ""} 
+                          ${isLastMove ? (isLight ? "bg-yellow-200!" : "bg-yellow-600/80!") : ""}
+                          ${isSelected ? "bg-blue-400!" : ""} 
                         `}
                       >
                         {rowIndex === 7 && <span className={`absolute bottom-0 right-0.5 text-[10px] font-bold ${isLight && !isLastMove ? "text-slate-700" : "text-white mix-blend-difference"}`}>{files[colIndex]}</span>}
@@ -560,13 +560,13 @@ export default function ChessAnalysisPage() {
         </div>
 
         {/* UI BOTTOM PLAYER */}
-        <div className="flex flex-col w-[85vw] max-w-[500px] mt-2 px-1">
+        <div className="flex flex-col w-[85vw] max-w-125 mt-2 px-1">
           <div className="flex justify-between w-full items-start">
             <div className="flex flex-col">
               <span className={`font-bold text-lg leading-none ${bottomPlayer.active ? "text-amber-400 font-extrabold" : "text-gray-400"}`}>
                 {bottomPlayer.name} {bottomPlayer.active && "•"}
               </span>
-              <div className="flex items-center text-lg mt-1.5 min-h-[1.5rem]">
+              <div className="flex items-center text-lg mt-1.5 min-h-6">
                 {bottomPlayer.captured.map((c, i) => (
                   <span key={i} className="text-gray-400 -ml-1 drop-shadow-md">{PIECES_UNICODE[c]}</span>
                 ))}
@@ -579,7 +579,7 @@ export default function ChessAnalysisPage() {
         </div>
 
         {/* NAVIGASI RIWAYAT LANGKAH */}
-        <div className="flex items-center gap-2 mt-4 bg-gray-900 border border-gray-800 p-2 rounded-xl shadow-md w-[85vw] max-w-[500px] justify-between">
+        <div className="flex items-center gap-2 mt-4 bg-gray-900 border border-gray-800 p-2 rounded-xl shadow-md w-[85vw] max-w-125 justify-between">
           <div className="flex gap-1">
             <button 
               onClick={() => goToStep(0)} 
