@@ -1,6 +1,7 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
 import "./globals.css";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata: Metadata = {
   title: "DimBoards - Platform Game Papan Klasik & Modern",
@@ -19,6 +20,7 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className="antialiased bg-gray-950 text-white">
+        <SpeedInsights/>
         {children}
       </body>
     </html>
