@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Chess, Square } from "chess.js";
 import Link from "next/link";
+import AdBanner from "@/components/AdBanner";
 
 const PIECES_UNICODE: { [key: string]: string } = {
   wK: "♔", wQ: "♕", wR: "♖", wB: "♗", wN: "♘", wP: "♙",
@@ -709,6 +710,7 @@ export default function ChessAnalysisPage() {
           </div>
         </div>
       )}
+      <AdBanner />
     </main>
   );
 }

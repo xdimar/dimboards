@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
+import AdBanner from "@/components/AdBanner";
 
 type Square = "X" | "O" | null;
 
@@ -257,6 +258,7 @@ export default function TicTacToePage() {
           Keluar dari Room
         </Link>
       </div>
+      <AdBanner />
     </main>
   );
 }
