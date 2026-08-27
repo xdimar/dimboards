@@ -293,7 +293,7 @@ export default function SudokuPage() {
         </div>
 
         {/* Papan Sudoku 9x9 */}
-        <div className="w-[85vw] max-w-[450px] aspect-square bg-gray-900 border-2 border-gray-700 grid grid-cols-9 grid-rows-9 rounded-xl overflow-hidden shadow-2xl">
+        <div className="w-[85vw] max-w-112.5 aspect-square bg-gray-900 border-2 border-gray-700 grid grid-cols-9 grid-rows-9 rounded-xl overflow-hidden shadow-2xl">
           {grid.map((row, rIdx) =>
             row.map((cell, cIdx) => {
               const isSelected = selectedCell?.row === rIdx && selectedCell?.col === cIdx;
@@ -315,12 +315,12 @@ export default function SudokuPage() {
                   onClick={() => setSelectedCell({ row: rIdx, col: cIdx })}
                   className={`flex items-center justify-center cursor-pointer select-none relative font-mono text-base sm:text-xl transition-colors
                     ${borderRight} ${borderBottom}
-                    ${isSelected ? "!bg-green-600/40 text-white font-bold" : ""}
+                    ${isSelected ? "bg-green-600/40! text-white font-bold" : ""}
                     ${!isSelected && isSameNumber ? "bg-green-950/60" : ""}
                     ${!isSelected && !isSameNumber && (isSameRowOrCol || isSameBox) ? "bg-gray-800/40" : ""}
                     ${!isSelected && !isSameNumber && !isSameRowOrCol && !isSameBox ? "bg-gray-950" : ""}
                     ${cell.isInitial ? "text-slate-100 font-bold" : "text-green-400"}
-                    ${isWrong ? "!text-rose-400 !bg-rose-950/40" : ""}
+                    ${isWrong ? "text-rose-400! bg-rose-950/40!" : ""}
                   `}
                 >
                   {cell.value !== 0 ? (
@@ -339,7 +339,7 @@ export default function SudokuPage() {
         </div>
 
         {/* Number Count Indicators & Numpad */}
-        <div className="w-[85vw] max-w-[450px] mt-3 flex flex-col gap-2">
+        <div className="w-[85vw] max-w-112.5 mt-3 flex flex-col gap-2">
           <div className="grid grid-cols-9 gap-1 sm:gap-1.5">
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
               const remaining = 9 - (numberCounts[num] || 0);
