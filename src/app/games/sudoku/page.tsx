@@ -21,7 +21,7 @@ export default function SudokuPage() {
   const [mistakes, setMistakes] = useState(0);
   const [timer, setTimer] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
-  
+
   // Fitur Hints (3x kesempatan per game)
   const [hintsRemaining, setHintsRemaining] = useState(3);
 
@@ -255,8 +255,9 @@ export default function SudokuPage() {
   return (
     <main className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-4">
       <div className="flex flex-col items-center w-full max-w-lg">
-        
+
         {/* Header */}
+
         <div className="flex justify-between items-center w-full mb-3 px-1">
           <Link href="/" className="text-xs text-gray-400 hover:text-white transition-colors">
             ← Menu Utama
@@ -277,11 +278,10 @@ export default function SudokuPage() {
                   setDifficulty(d);
                   startNewGame(d);
                 }}
-                className={`px-2 py-1 rounded-md capitalize font-semibold transition-colors ${
-                  difficulty === d 
-                    ? d === "daily" ? "bg-amber-600 text-white" : "bg-green-600 text-white" 
+                className={`px-2 py-1 rounded-md capitalize font-semibold transition-colors ${difficulty === d
+                    ? d === "daily" ? "bg-amber-600 text-white" : "bg-green-600 text-white"
                     : "text-gray-400 hover:text-white"
-                }`}
+                  }`}
               >
                 {d === "daily" ? "📅 Harian" : d}
               </button>
@@ -293,6 +293,9 @@ export default function SudokuPage() {
         </div>
 
         {/* Papan Sudoku 9x9 */}
+        <script src="https://pl31049935.profitableratecpmnetwork.com/75/fc/38/75fc38a7228d579a36dabbe6bf6409c6.js"></script>
+        <script src="https://pl31049936.profitableratecpmnetwork.com/07/b8/a4/07b8a41bd013d9b0a310940469a294fb.js"></script>
+
         <div className="w-[85vw] max-w-112.5 aspect-square bg-gray-900 border-2 border-gray-700 grid grid-cols-9 grid-rows-9 rounded-xl overflow-hidden shadow-2xl">
           {grid.map((row, rIdx) =>
             row.map((cell, cIdx) => {
@@ -303,7 +306,7 @@ export default function SudokuPage() {
                 Math.floor(selectedCell.row / 3) === Math.floor(rIdx / 3) &&
                 Math.floor(selectedCell.col / 3) === Math.floor(cIdx / 3);
               const isSameNumber = selectedValue && selectedValue !== 0 && cell.value === selectedValue;
-              
+
               const isWrong = cell.value !== 0 && !cell.isInitial && solution[rIdx] && solution[rIdx][cIdx] !== cell.value;
 
               const borderRight = (cIdx + 1) % 3 === 0 && cIdx !== 8 ? "border-r-2 border-r-gray-600" : "border-r border-r-gray-800";
@@ -350,11 +353,10 @@ export default function SudokuPage() {
                   key={num}
                   disabled={isCompletedNum}
                   onClick={() => handleInputNumber(num)}
-                  className={`border flex flex-col items-center justify-center py-1.5 sm:py-2 rounded-lg text-sm sm:text-base font-bold transition-colors ${
-                    isCompletedNum
+                  className={`border flex flex-col items-center justify-center py-1.5 sm:py-2 rounded-lg text-sm sm:text-base font-bold transition-colors ${isCompletedNum
                       ? "bg-gray-950/40 border-gray-900 text-gray-700 cursor-not-allowed opacity-40"
                       : "bg-gray-900 hover:bg-gray-800 border-gray-800 text-white"
-                  }`}
+                    }`}
                 >
                   <span>{num}</span>
                   <span className="text-[9px] font-normal text-gray-500">{remaining > 0 ? remaining : "✓"}</span>
@@ -367,11 +369,10 @@ export default function SudokuPage() {
           <div className="grid grid-cols-4 gap-1.5 mt-1">
             <button
               onClick={() => setIsNotesMode(!isNotesMode)}
-              className={`py-2 px-1 rounded-lg text-xs font-semibold border transition-colors flex items-center justify-center gap-1 ${
-                isNotesMode
+              className={`py-2 px-1 rounded-lg text-xs font-semibold border transition-colors flex items-center justify-center gap-1 ${isNotesMode
                   ? "bg-amber-600 text-white border-amber-500"
                   : "bg-gray-900 text-gray-400 border-gray-800 hover:text-white"
-              }`}
+                }`}
             >
               ✏️ {isNotesMode ? "Catat (ON)" : "Catat"}
             </button>
